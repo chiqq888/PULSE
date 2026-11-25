@@ -13,6 +13,9 @@ dist/
 /docs/
 /docs/PULSE_SECURITY_REVIEW_*.md
 
+# Local database migrations
+/supabase/migrations/
+
 # Logs & editors
 *.log
 .DS_Store
