@@ -177,7 +177,7 @@ export function RoleShowcase() {
 
   const resolveCtaPath = (item) => {
     if (item.ctaTo) return item.ctaTo;
-    if (user && role === item.id) return item.ctaLoggedInTo;
+    if (user && (role === item.id || item.id === 'staff')) return item.ctaLoggedInTo;
     return item.ctaLoggedOutTo;
   };
 
@@ -185,7 +185,7 @@ export function RoleShowcase() {
     if (item.id === 'organizer' && (!user || role !== 'organizer')) {
       return 'สมัครใช้งานฟรี';
     }
-    if (item.id === 'staff' && (!user || role !== 'staff')) {
+    if (item.id === 'staff' && !user) {
       return 'เข้าสู่ระบบ Staff';
     }
     return item.ctaLabel;

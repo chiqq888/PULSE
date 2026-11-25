@@ -521,7 +521,7 @@ export function EventForm({
               <p className="field-label">
                 ผังที่นั่ง ({previewSeats.length} ที่นั่ง)
               </p>
-              <SeatMap seats={previewSeats} readOnly />
+              <SeatMap seats={previewSeats} templateId={form.seatTemplateId} readOnly />
             </div>
           </div>
         )}

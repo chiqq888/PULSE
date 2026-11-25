@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
     let active = true;
     const timeout = setTimeout(() => controller.abort(), 12_000);
 
-    async function loadRole() {
+    async function loadProfile() {
       try {
         const { data, error } = await getSupabase()
           .from('profiles')
@@ -43,7 +43,11 @@ export function AuthProvider({ children }) {
 
         if (error) throw error;
         if (active) {
-          setProfileResult({ userId, profileAttempt, role: data.role });
+          setProfileResult({
+            userId,
+            profileAttempt,
+            role: data.role,
+          });
         }
       } catch {
         if (active) {
@@ -58,7 +62,7 @@ export function AuthProvider({ children }) {
       }
     }
 
-    loadRole();
+    loadProfile();
     return () => {
       active = false;
       controller.abort();
@@ -74,6 +78,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     role: profile?.role ?? null,
+    canAccessStaff: profile?.role === 'staff' || profile?.role === 'organizer',
     loading: !initialized || Boolean(userId && !profile),
     error: profile?.error ?? null,
     retryProfile: () => setProfileAttempt((attempt) => attempt + 1),

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { AccountActions } from '../components/AccountActions';
 import { BrandLogo } from '../components/BrandLogo';
 import { PrimaryNav } from '../components/PrimaryNav';
+import { SiteFooter } from '../components/SiteFooter';
 
 const USER_NAV_ITEMS = [
   { to: '/user', label: 'Explore', end: true },
@@ -28,12 +29,7 @@ export function UserLayout() {
         </div>
       </main>
 
-      <footer className="site-footer">
-        <div className="container site-footer__inner">
-          <span>PULSE - ระบบลงทะเบียนอีเวนต์และคอนเสิร์ตฟรี พร้อมบัตร QR และการเช็กอิน</span>
-          <span className="site-footer__copy">© 2026 PULSE by chiqq888. All rights reserved.</span>
-        </div>
-      </footer>
+      <SiteFooter role="User" />
     </div>
   );
 }

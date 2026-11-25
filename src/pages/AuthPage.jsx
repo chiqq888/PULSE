@@ -103,7 +103,7 @@ function AuthTermsNote() {
 }
 
 export function AuthPage({ register = false }) {
-  const { user, role, loading, error: profileError, retryProfile, signIn, signUp } = useAuth();
+  const { user, role, canAccessStaff, loading, error: profileError, retryProfile, signIn, signUp } = useAuth();
   const location = useLocation();
   const from = location.state?.from;
   const [busy, setBusy] = useState(false);
@@ -166,7 +166,7 @@ export function AuthPage({ register = false }) {
   }
 
   if (user && !loading && !profileError) {
-    return <Navigate to={afterAuthentication(from, role)} replace />;
+    return <Navigate to={afterAuthentication(from, role, canAccessStaff)} replace />;
   }
 
   return (

@@ -4,12 +4,13 @@ import { accountHome } from '../app/authNavigation';
 import { useAuth } from '../context/AuthContext';
 
 export function AccountActions() {
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, canAccessStaff, loading, signOut } = useAuth();
   const location = useLocation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const home = accountHome(role);
   const inWorkspace = location.pathname === home || location.pathname.startsWith(`${home}/`);
+  const inStaffWorkspace = location.pathname === '/staff' || location.pathname.startsWith('/staff/');
 
   async function handleSignOut() {
     setBusy(true);
@@ -39,10 +40,10 @@ export function AccountActions() {
       {role === 'organizer' && !inWorkspace && (
         <Link className="link-inline" to={home}>จัดการงาน</Link>
       )}
-      {role === 'staff' && !inWorkspace && (
-        <Link className="link-inline" to={home}>เช็กอิน</Link>
+      {canAccessStaff && !inStaffWorkspace && (
+        <Link className="link-inline" to="/staff">เช็กอิน</Link>
       )}
-      {home !== '/user' && inWorkspace && (
+      {(inStaffWorkspace || (home !== '/user' && inWorkspace)) && (
         <Link className="link-inline" to="/user">สำรวจงาน</Link>
       )}
       <span className="account-actions__identity" title={user.email}>

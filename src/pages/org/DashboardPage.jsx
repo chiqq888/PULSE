@@ -189,7 +189,7 @@ export function DashboardPage() {
                               to={`/org/events/${event.id}/attendees`}
                               className="btn btn--secondary btn--xs"
                             >
-                              ผู้ลงทะเบียน
+                              รายชื่อทั้งหมด
                             </Link>
                             <Link
                               to={`/org/events/${event.id}/edit`}

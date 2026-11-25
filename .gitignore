@@ -4,9 +4,14 @@ node_modules/
 # Build output
 dist/
 
-# Local environment overrides
+# Environment files
 .env
-.env.local
+.env.*
+!.env.example
+
+# Local security reviews
+/docs/
+/docs/PULSE_SECURITY_REVIEW_*.md
 
 # Logs & editors
 *.log

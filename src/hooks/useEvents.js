@@ -4,8 +4,9 @@ import { isAbortError } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 export function useEvents(scope = 'public') {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const userId = scope === 'public' ? undefined : user?.id;
+  const includeOwned = scope === 'staff' && role === 'organizer';
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +32,7 @@ export function useEvents(scope = 'public') {
     }
 
     try {
-      const data = await getEvents({ signal: controller.signal, scope, userId });
+      const data = await getEvents({ signal: controller.signal, scope, userId, includeOwned });
       if (seq !== requestSeqRef.current) return;
       setEvents(Array.isArray(data) ? data : []);
       setError(null);
@@ -43,7 +44,7 @@ export function useEvents(scope = 'public') {
         setLoading(false);
       }
     }
-  }, [scope, userId]);
+  }, [scope, userId, includeOwned]);
 
   useEffect(() => {
     setEvents([]);

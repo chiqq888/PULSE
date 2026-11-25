@@ -13,9 +13,34 @@ import {
   closeEvent,
   deleteDraftEvent,
   publishEvent,
+  reopenEvent,
 } from '../../services/eventService';
 import { getEventTicketStats } from '../../utils/capacityUtils';
 import { formatEventTimeRange } from '../../utils/dateUtils';
+
+const eventActions = {
+  close: {
+    run: closeEvent,
+    title: 'ปิดรับลงทะเบียน',
+    message: (event) => `ปิดรับผู้ลงทะเบียนใหม่สำหรับงาน “${event.title}” บัตรเดิมยังใช้เช็กอินได้`,
+    success: (event) => `ปิดรับลงทะเบียนงาน “${event.title}” แล้ว`,
+    tone: 'primary',
+  },
+  reopen: {
+    run: reopenEvent,
+    title: 'เปิดรับลงทะเบียนอีกครั้ง',
+    message: (event) => `เปลี่ยนงาน “${event.title}” เป็น Published ผู้เข้าร่วมลงทะเบียนได้ก่อนเวลาเริ่มงานเมื่อมีที่ว่าง`,
+    success: (event) => `เปลี่ยนสถานะงาน “${event.title}” เป็น Published แล้ว`,
+    tone: 'primary',
+  },
+  delete: {
+    run: deleteDraftEvent,
+    title: 'ลบ Draft',
+    message: (event) => `ลบงานฉบับร่าง “${event.title}” ออกจากฐานข้อมูล การลบไม่สามารถย้อนกลับได้`,
+    success: (event) => `ลบ Draft งาน “${event.title}” ออกจากระบบเรียบร้อยแล้ว`,
+    tone: 'danger',
+  },
+};
 
 export function EventsPage() {
   const location = useLocation();
@@ -42,11 +67,8 @@ export function EventsPage() {
   const [missingPublishDetails, setMissingPublishDetails] = useState(null);
   const [busyEventId, setBusyEventId] = useState('');
 
-  const [confirmState, setConfirmState] = useState({
-    open: false,
-    action: null, // 'close' | 'delete'
-    event: null,
-  });
+  const [confirmState, setConfirmState] = useState(null);
+  const confirmation = eventActions[confirmState?.action];
 
   const loading = eventsLoading || ticketsLoading;
   const error = eventsError || ticketsError;
@@ -97,8 +119,8 @@ export function EventsPage() {
   };
 
   const handleConfirmAction = async () => {
-    const { action, event } = confirmState;
-    if (!event || !action) return;
+    if (!confirmation) return;
+    const { event } = confirmState;
 
     setBusyEventId(event.id);
     setActionError('');
@@ -106,17 +128,12 @@ export function EventsPage() {
     setMissingPublishDetails(null);
 
     try {
-      if (action === 'close') {
-        await closeEvent(event.id, user.id);
-        setActionMessage(`ปิดรับลงทะเบียนงาน "${event.title}" แล้ว (ประวัติบัตรและการเช็กอินเดิมยังคงอยู่)`);
-      } else if (action === 'delete') {
-        await deleteDraftEvent(event.id, user.id);
-        setActionMessage(`ลบ Draft งาน "${event.title}" ออกจากระบบเรียบร้อยแล้ว`);
-      }
-      setConfirmState({ open: false, action: null, event: null });
+      await confirmation.run(event.id, user.id);
+      setActionMessage(confirmation.success(event));
+      setConfirmState(null);
       await refreshAll();
     } catch (err) {
-      setConfirmState({ open: false, action: null, event: null });
+      setConfirmState(null);
       setActionError(err?.message || 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่');
     } finally {
       setBusyEventId('');
@@ -129,7 +146,7 @@ export function EventsPage() {
         <div>
           <h1>จัดการรายการงานทั้งหมด</h1>
           <p className="page-header__subtitle">
-            สร้างฉบับร่าง (Draft) แก้ไข เผยแพร่ ปิดรับลงทะเบียน ดูผู้เข้าร่วม และลบ Draft ที่ยังไม่มีประวัติบัตร
+            จัดการสถานะงาน เปิดหรือปิดรับลงทะเบียน และดูรายชื่อผู้เข้าร่วม
           </p>
         </div>
         <Link to="/org/events/new" className="btn btn--primary">
@@ -313,10 +330,21 @@ export function EventsPage() {
                         className="btn btn--warning btn--sm"
                         disabled={isBusy}
                         onClick={() =>
-                          setConfirmState({ open: true, action: 'close', event })
+                          setConfirmState({ action: 'close', event })
                         }
                       >
                         ปิดรับลงทะเบียน (Close)
+                      </button>
+                    )}
+
+                    {event.status === 'closed' && (
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--sm"
+                        disabled={isBusy}
+                        onClick={() => setConfirmState({ action: 'reopen', event })}
+                      >
+                        เปิดรับลงทะเบียนอีกครั้ง
                       </button>
                     )}
 
@@ -331,7 +359,7 @@ export function EventsPage() {
                             : 'ไม่สามารถลบได้ เนื่องจากมีประวัติบัตรลงทะเบียนแล้ว'
                         }
                         onClick={() =>
-                          setConfirmState({ open: true, action: 'delete', event })
+                          setConfirmState({ action: 'delete', event })
                         }
                       >
                         ลบ Draft
@@ -350,24 +378,14 @@ export function EventsPage() {
       )}
 
       <ConfirmDialog
-        open={confirmState.open}
-        title={
-          confirmState.action === 'delete'
-            ? 'ยืนยันการลบ Draft งานนี้?'
-            : 'ยืนยันการปิดรับลงทะเบียน?'
-        }
-        message={
-          confirmState.action === 'delete'
-            ? `ต้องการลบงานฉบับร่าง "${confirmState.event?.title}" ออกจากฐานข้อมูลใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`
-            : `ต้องการปิดรับลงทะเบียนสำหรับงาน "${confirmState.event?.title}" ใช่หรือไม่? ผู้ใช้จะไม่สามารถลงทะเบียนเพิ่มได้ แต่ประวัติบัตรเดิมและการเช็กอินจะยังคงใช้งานได้ตามปกติ`
-        }
-        confirmLabel={
-          confirmState.action === 'delete' ? 'ยืนยันลบ Draft' : 'ยืนยันปิดรับลงทะเบียน'
-        }
-        tone={confirmState.action === 'delete' ? 'danger' : 'primary'}
+        open={Boolean(confirmation)}
+        title={confirmation?.title}
+        message={confirmation?.message(confirmState.event)}
+        confirmLabel={confirmation?.title}
+        tone={confirmation?.tone}
         isSubmitting={Boolean(busyEventId)}
         onConfirm={handleConfirmAction}
-        onCancel={() => setConfirmState({ open: false, action: null, event: null })}
+        onCancel={() => setConfirmState(null)}
       />
     </div>
   );

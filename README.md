@@ -5,13 +5,13 @@
 | บทบาท | หน้าที่ |
 | --- | --- |
 | User | ค้นหางานสาธารณะ ลงทะเบียน เลือกที่นั่ง และดูหรือยกเลิกบัตรของบัญชีตัวเอง |
-| Organizer | สร้างและเผยแพร่งานของตัวเอง กำหนดจำนวนหรือผังที่นั่ง และดูรายชื่อผู้ลงทะเบียน |
+| Organizer | สร้างและเผยแพร่งานของตัวเอง กำหนดจำนวนหรือผังที่นั่ง ดูรายชื่อผู้ลงทะเบียน และเพิ่ม Staff ประจำงาน |
 | Staff | สแกน QR หรือกรอกรหัสบัตรเพื่อเช็กอินให้กับงานที่ได้รับมอบหมาย |
 
 ## ตั้งค่า Supabase
 
 1. สร้างโปรเจกต์ใน Supabase และเปิด Data API สำหรับ schema `public`
-2. รัน migration ทั้งไฟล์ใน SQL Editor ของโปรเจกต์หนึ่งครั้ง ฐานข้อมูลเริ่มต้นพร้อมหมวดหมู่ให้ผู้จัดใช้สร้างงาน สำหรับโปรเจกต์ที่จัดการ migration ผ่าน CLI ให้ใช้คำสั่ง push ตามคู่มือ Supabase [ไฟล์ migration](./supabase/migrations/20261125000000_pulse.sql) · [คู่มือ migration ผ่าน CLI](https://supabase.com/docs/guides/local-development/database-migrations)
+2. รัน migration ตามลำดับใน SQL Editor ของโปรเจกต์ ครั้งละหนึ่งไฟล์ สำหรับฐานข้อมูลที่ตั้งค่า PULSE ไว้แล้ว ให้รัน migration ที่ยังไม่ได้ใช้ [ฐานข้อมูลเริ่มต้น](./supabase/migrations/20261125000000_pulse.sql) · [Staff ประจำงาน](./supabase/migrations/20261125000100_event_staff_workspace.sql) · [เปิดรับลงทะเบียนอีกครั้ง](./supabase/migrations/20261125000200_reopen_closed_events.sql) · [ตรวจบทบาท Staff](./supabase/migrations/20261126000000_require_staff_role_for_event_assignments.sql) · [คู่มือ migration ผ่าน CLI](https://supabase.com/docs/guides/local-development/database-migrations)
 3. เปิด Email provider และอนุญาตการสมัครบัญชีใหม่ใน **Authentication → Sign In / Providers** เปิด Confirm email หากต้องการให้ผู้สมัครยืนยันอีเมล
 4. ใน **Authentication → URL Configuration** ตั้ง **Site URL** เป็น origin ของเว็บ และเพิ่ม URL หน้าเข้าสู่ระบบที่อนุญาตใน **Redirect URLs** เช่น `http://localhost:5173/login` สำหรับเครื่องพัฒนา และ `https://your-app.example/login` โดยใช้โดเมนจริงสำหรับ Production
 5. คัดลอก Project URL และ Publishable key จาก **Connect** ไปตั้งค่าในแอปตามด้านล่าง
@@ -44,28 +44,17 @@ npm run dev
 
 ## ให้สิทธิ์ Organizer และ Staff
 
-ให้บุคคลที่จะใช้งานสมัครผ่าน `/register` ก่อน จากนั้นผู้ดูแล Supabase กำหนดบทบาทใน SQL Editor โดยระบุอีเมลของแต่ละบัญชี
+ให้ผู้ดูแล Supabase สร้างบัญชีผ่าน **Authentication → Users** สำหรับ Staff และ Organizer โดยตรวจสอบอีเมลกับเจ้าของบัญชีก่อน คัดลอก User UID จากบัญชีที่สร้าง แล้วกำหนดบทบาทใน SQL Editor ใช้ `staff` สำหรับ Staff หรือ `organizer` สำหรับ Organizer
 
 ```sql
-update public.profiles
-set role = 'organizer'
-where id = (select id from auth.users where email = '<organizer-email>');
-
 update public.profiles
 set role = 'staff'
-where id = (select id from auth.users where email = '<staff-email>');
+where id = '<auth-user-uid>';
 ```
 
-Organizer เข้าหน้า `/org` เพื่อสร้างงาน ส่วน Staff เข้าหน้า `/staff` หลังผู้ดูแลมอบหมายงานโดยใช้รหัสงานจริง
+หากอีเมลถูกใช้สมัครไปแล้ว ให้ตรวจว่าใครควบคุมบัญชีเดิมก่อนพิจารณาให้สิทธิ์ หรือสร้างบัญชีทีมงานด้วยอีเมลอื่นที่ตรวจสอบแล้ว
 
-```sql
-insert into public.staff_event_assignments (event_id, staff_id)
-select '<event-id>', id
-from auth.users
-where email = '<staff-email>';
-```
-
-หากบัญชีเข้าสู่ระบบอยู่แล้ว ให้ออกจากระบบแล้วเข้าสู่ระบบอีกครั้งเพื่อโหลดสิทธิ์ล่าสุด
+Organizer เปิดงานของตัวเองจากรายการงาน แล้วไปที่แท็บ **Staff → เพิ่ม Staff** และกรอกอีเมลบัญชี Staff ที่แอดมินสร้างให้ ระบบจะตรวจอีเมลและบทบาท `staff` ก่อนมอบหมายงาน บัญชีที่เคยได้รับมอบหมายจะใช้สิทธิ์ได้เมื่อมีบทบาท `staff` เมื่อเผยแพร่งาน Staff จะพบงานที่เมนู **เช็กอิน** (`/staff`) หากเปิดเว็บอยู่ ให้โหลดหน้าใหม่เพื่ออัปเดตสิทธิ์
 
 ## Build และเผยแพร่เว็บ
 
@@ -75,5 +64,7 @@ npm run preview
 ```
 
 เผยแพร่โฟลเดอร์ `dist` บนโฮสต์ที่รองรับ SPA fallback ไปยัง `index.html` ตั้งค่า Supabase environment variables ก่อน Build และใช้ HTTPS เพื่อให้เบราว์เซอร์เปิดกล้องสแกน QR ได้ ทีม Staff สามารถกรอกรหัสบัตรด้วยตนเองได้เช่นกัน
+
+บนโฮสต์ Apache ที่รองรับ `mod_rewrite` ให้วาง `.htaccess` จาก `dist` ไว้ใน Document Root ของโดเมนเดียวกับ `index.html` หากมี `.htaccess` อยู่แล้ว ให้เพิ่มกฎ PULSE ลงในไฟล์เดิมก่อนกฎที่จับทุกเส้นทาง แล้วลองเปิดหรือรีเฟรช `/register` โดยตรง
 
 [ข้อกำหนดผลิตภัณฑ์](./PULSE_Requirements_TH.md) · [สถาปัตยกรรมและข้อมูล](./PULSE_Technical_Spec_TH.md)

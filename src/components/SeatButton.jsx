@@ -4,12 +4,15 @@ export function SeatButton({
   seat,
   status = 'available',
   disabled = false,
+  viewBox = SEAT_MAP_VIEWBOX,
+  displayLabel = null,
   onSelect,
 }) {
   const isTaken = status === 'taken';
   const isSelected = status === 'selected';
-  const leftPercent = (seat.x / SEAT_MAP_VIEWBOX.width) * 100;
-  const topPercent = (seat.y / SEAT_MAP_VIEWBOX.height) * 100;
+  const leftPercent = (seat.x / viewBox.width) * 100;
+  const topPercent = (seat.y / viewBox.height) * 100;
+  const textLabel = displayLabel || seat.label;
 
   const statusText = isTaken
     ? 'ถูกลงทะเบียนแล้ว'
@@ -40,17 +43,17 @@ export function SeatButton({
           <span className="seat-btn__mark" aria-hidden="true">
             ✕
           </span>
-          <span className="seat-btn__sub">{seat.label}</span>
+          <span className="seat-btn__sub">{textLabel}</span>
         </>
       ) : isSelected ? (
         <>
           <span className="seat-btn__mark" aria-hidden="true">
             ✓
           </span>
-          <span className="seat-btn__sub">{seat.label}</span>
+          <span className="seat-btn__sub">{textLabel}</span>
         </>
       ) : (
-        <span className="seat-btn__label">{seat.label}</span>
+        <span className="seat-btn__label">{textLabel}</span>
       )}
     </button>
   );

@@ -605,16 +605,7 @@
   box-shadow: var(--shadow-md);
 }
 
-.ticket-pass--valid {
-  border-top: 4px solid var(--success);
-}
-
-.ticket-pass--used {
-  border-top: 4px solid var(--info);
-}
-
 .ticket-pass--cancelled {
-  border-top: 4px solid var(--danger);
   opacity: 0.94;
 }
 
@@ -1165,4 +1156,165 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+.detail-meta-grid > div,
+.checkin-result__details > div {
+  min-width: 0;
+}
+
+.detail-meta-grid dd,
+.checkin-result__details dd {
+  overflow-wrap: anywhere;
+}
+
+.registration-success__summary,
+.ticket-card__content,
+.ticket-pass__main,
+.ticket-pass__stub,
+.org-event-row__body,
+.staff-event-card__body,
+.checkin-workspace__inputs,
+.checkin-workspace__result,
+.qr-scanner__header > div {
+  min-width: 0;
+}
+
+.ticket-qr,
+.ticket-qr__frame {
+  max-width: 100%;
+}
+
+.ticket-qr__frame svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.ticket-card__title,
+.ticket-pass__title,
+.org-event-row__title,
+.staff-event-card__title {
+  overflow-wrap: break-word;
+}
+
+.qr-scanner__reader video {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.checkin-result__header > div {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 520px) {
+  .event-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .event-form__actions-right {
+    flex-direction: column;
+  }
+
+  .event-form__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-banner {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .hero-banner__title {
+    font-size: 1.5rem;
+  }
+
+  .hero-banner__subtitle {
+    font-size: 0.92rem;
+  }
+
+  .event-card__body {
+    padding: 14px 16px 16px;
+  }
+
+  .ticket-card__content {
+    padding: 14px 16px;
+  }
+
+  .ticket-pass {
+    gap: 18px;
+    border-radius: 20px;
+  }
+
+  .ticket-pass__actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .org-event-row {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .staff-event-card {
+    padding: 14px;
+  }
+
+  .staff-event-card__actions .btn {
+    width: 100%;
+  }
+
+  .qr-scanner__controls {
+    width: 100%;
+  }
+
+  .qr-scanner__controls .btn {
+    width: 100%;
+  }
+
+  .checkin-result {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .checkin-result__details {
+    padding: 12px;
+  }
+
+  .checkin-result__actions {
+    flex-direction: column;
+  }
+
+  .checkin-result__actions .btn {
+    width: 100%;
+  }
+
+  .checkin-empty-panel {
+    padding: 28px 16px;
+  }
+
+  .registration-success__actions {
+    flex-direction: column;
+  }
+
+  .registration-success__actions .btn {
+    width: 100%;
+  }
+
+  .not-found-card {
+    margin: 20px auto;
+    padding: 30px 18px;
+  }
+
+  .not-found-card__actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .not-found-card__actions .btn {
+    width: 100%;
+  }
 }

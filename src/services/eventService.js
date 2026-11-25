@@ -25,17 +25,18 @@ function normalizeRegistrationFields(formData) {
   };
 }
 
-export async function getEvents({ signal, scope = 'public', userId } = {}) {
+export async function getEvents({ signal, scope = 'public', userId, includeOwned = false } = {}) {
   const client = getSupabase();
   const buildQuery = () => {
     const events = client.from('events');
     if (scope === 'organizer') return events.select('*').eq('owner_id', userId).order('id');
     if (scope === 'staff') {
-      return events
-        .select('*, staff_event_assignments!inner(staff_id)')
+      const query = events
+        .select(includeOwned ? '*, staff_event_assignments(staff_id)' : '*, staff_event_assignments!inner(staff_id)')
         .eq('staff_event_assignments.staff_id', userId)
         .in('status', ['published', 'closed'])
         .order('id');
+      return includeOwned ? query.or(`owner_id.eq.${userId},staff_event_assignments.not.is.null`) : query;
     }
     return events.select('*').in('status', ['published', 'closed']).order('id');
   };
@@ -173,6 +174,17 @@ export async function closeEvent(eventId, userId) {
     });
   }
   return updateEventRecord(existing, { status: 'closed' });
+}
+
+export async function reopenEvent(eventId, userId) {
+  const existing = await getOrganizerEvent(eventId, userId);
+  if (existing.status !== 'closed') {
+    throw new ApiError('สามารถเปิดรับลงทะเบียนอีกครั้งได้เฉพาะงานที่ปิดรับแล้ว', {
+      code: 'INVALID_STATUS',
+    });
+  }
+
+  return updateEventRecord(existing, { status: 'published' });
 }
 
 export async function deleteDraftEvent(eventId, userId) {

@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# Serve the React app when a visitor opens or refreshes a page URL directly.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(login|register|user|org|staff)(/|$) index.html [L]

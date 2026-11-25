@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AttendeeTable } from '../../components/AttendeeTable';
 import { FeedbackState } from '../../components/FeedbackState';
 import { Icon } from '../../components/Icon';
@@ -11,10 +11,14 @@ import { useTickets } from '../../hooks/useTickets';
 import { ApiError } from '../../services/apiClient';
 import { getEventTicketStats } from '../../utils/capacityUtils';
 import { formatEventTimeRange } from '../../utils/dateUtils';
+import { EventStaffPanel } from './EventStaffPanel';
 
 export function AttendeesPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const staffTab = searchParams.get('tab') === 'staff';
+  const [staffRefreshVersion, setStaffRefreshVersion] = useState(0);
 
   const {
     event,
@@ -27,7 +31,7 @@ export function AttendeesPage() {
     loading: ticketsLoading,
     error: ticketsError,
     refetch: refetchTickets,
-  } = useTickets({ mode: 'event', eventId: id });
+  } = useTickets({ mode: 'event', eventId: id, enabled: !staffTab });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -35,9 +39,9 @@ export function AttendeesPage() {
   const pollRefresh = useCallback(async () => {
     await Promise.all([
       refetchEvent({ silent: true }),
-      refetchTickets({ silent: true }),
+      staffTab ? null : refetchTickets({ silent: true }),
     ]);
-  }, [refetchEvent, refetchTickets]);
+  }, [refetchEvent, refetchTickets, staffTab]);
 
   usePolling(pollRefresh, 5000, Boolean(event));
 
@@ -69,7 +73,7 @@ export function AttendeesPage() {
 
   const loading = eventLoading || (ticketsLoading && tickets.length === 0 && !event);
   if (loading) {
-    return <FeedbackState type="loading" title="กำลังโหลดรายชื่อผู้ลงทะเบียน..." />;
+    return <FeedbackState type="loading" title="กำลังโหลดข้อมูลงาน..." />;
   }
 
   if (eventError) {
@@ -101,7 +105,14 @@ export function AttendeesPage() {
               เปิดหน้า Staff เช็กอินงานนี้
             </Link>
           )}
-          <button type="button" className="btn btn--ghost btn--xs" onClick={pollRefresh}>
+          <button
+            type="button"
+            className="btn btn--ghost btn--xs"
+            onClick={() => {
+              if (staffTab) setStaffRefreshVersion((version) => version + 1);
+              pollRefresh();
+            }}
+          >
             <Icon name="refresh" size={14} />
             <span>รีเฟรช</span>
           </button>
@@ -116,7 +127,7 @@ export function AttendeesPage() {
               <StatusBadge type={event.eventType} />
               <StatusBadge type={event.registrationMode} />
             </div>
-            <h1>รายชื่อผู้ลงทะเบียน: {event.title}</h1>
+            <h1>{event.title}</h1>
             <p className="page-header__subtitle icon-meta-wrap">
               <span className="icon-text">
                 <Icon name="calendar" size={14} />
@@ -132,121 +143,148 @@ export function AttendeesPage() {
         </div>
       )}
 
-      {ticketsError && (
-        <div className="alert alert--danger" role="alert">
-          โหลดรายชื่อไม่สำเร็จ: {ticketsError.message}{' '}
-          <button type="button" className="btn btn--secondary btn--xs" onClick={refetchTickets}>
-            ลองใหม่
-          </button>
-        </div>
-      )}
+      <nav className="tabs-bar" aria-label="พื้นที่จัดการงาน">
+        <Link
+          to={{ search: '' }}
+          className={`tab-btn${staffTab ? '' : ' tab-btn--active'}`}
+          aria-current={staffTab ? undefined : 'page'}
+          preventScrollReset
+        >
+          ผู้ลงทะเบียน
+        </Link>
+        <Link
+          to={{ search: '?tab=staff' }}
+          className={`tab-btn${staffTab ? ' tab-btn--active' : ''}`}
+          aria-current={staffTab ? 'page' : undefined}
+          preventScrollReset
+        >
+          Staff
+        </Link>
+      </nav>
 
-      {stats.hasAnomalies && (
-        <div className="alert alert--danger" role="alert">
-          <strong>ตรวจพบความผิดปกติของข้อมูลในงานนี้:</strong>{' '}
-          {stats.hasOverCapacity && `จำนวนที่ว่างติดลบ (${stats.remaining}) `}
-          {stats.hasDuplicateSeats &&
-            `พบที่นั่งซ้ำ: ${stats.duplicateSeatIds.map((d) => `${d.seatId} (${d.count})`).join(', ')}`}
-        </div>
-      )}
-
-      <section className="stats-grid" aria-label="สถิติผู้ลงทะเบียนของงานนี้">
-        <StatCard
-          label="ผู้ลงทะเบียนที่ยังมีสิทธิ์"
-          value={stats.activeCount}
-          sublabel={`Valid ${stats.validCount} + Used ${stats.usedCount}`}
-          tone="accent"
-        />
-        <StatCard
-          label="เช็กอินแล้ว (Used)"
-          value={stats.usedCount}
-          sublabel={`อัตราเช็กอิน ${stats.checkInRate}%`}
-          tone="success"
-        />
-        <StatCard
-          label="ยกเลิกแล้ว (Cancelled)"
-          value={stats.cancelledCount}
-          sublabel="ไม่นับรวมในความจุ"
-          tone="muted"
-        />
-        <StatCard
-          label="ที่ว่างคงเหลือ"
-          value={stats.remainingLabel}
-          tone={stats.hasOverCapacity ? 'warning' : 'default'}
-        />
-      </section>
-
-      <section className="filters-panel" aria-label="ค้นหาและกรองผู้ลงทะเบียน">
-        <div className="filters-panel__row filters-panel__row--2">
-          <div className="filter-field filter-field--search">
-            <label htmlFor="attendee-search" className="field-label">
-              ค้นหาผู้ลงทะเบียน
-            </label>
-            <input
-              id="attendee-search"
-              type="search"
-              className="input"
-              placeholder="ค้นหาด้วยชื่อ อีเมล รหัสบัตร TKT-... หรือเลขที่นั่ง..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="filter-field">
-            <label htmlFor="attendee-status" className="field-label">
-              สถานะบัตร
-            </label>
-            <select
-              id="attendee-status"
-              className="select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">ทุกสถานะ ({tickets.length})</option>
-              <option value="valid">Valid - ใช้สิทธิ์ได้ ({stats.validCount})</option>
-              <option value="used">Used - เช็กอินแล้ว ({stats.usedCount})</option>
-              <option value="cancelled">Cancelled - ยกเลิกแล้ว ({stats.cancelledCount})</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="filters-panel__footer">
-          <span className="filters-panel__count">
-            แสดง <strong>{filteredTickets.length}</strong> จาก {tickets.length} รายการ
-          </span>
-          {(searchQuery || statusFilter !== 'all') && (
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-              }}
-            >
-              ล้างตัวกรอง
-            </button>
-          )}
-        </div>
-      </section>
-
-      {filteredTickets.length === 0 ? (
-        <FeedbackState
-          type="empty"
-          title={
-            tickets.length === 0
-              ? 'ยังไม่มีผู้ลงทะเบียนสำหรับงานนี้'
-              : 'ไม่พบรายชื่อที่ตรงกับคำค้นหาหรือตัวกรอง'
-          }
-          message={
-            tickets.length === 0
-              ? 'เมื่อมีผู้ลงทะเบียนในมุมมอง User รายชื่อและสถานะบัตรจะแสดงที่นี่ทันที'
-              : 'ลองเปลี่ยนคำค้นหาหรือเลือกดูทุกสถานะ'
-          }
-        />
+      {staffTab ? (
+        <EventStaffPanel key={id} eventId={id} refreshVersion={staffRefreshVersion} />
+      ) : ticketsLoading && tickets.length === 0 ? (
+        <FeedbackState type="loading" title="กำลังโหลดรายชื่อผู้ลงทะเบียน..." />
       ) : (
-        <section className="card">
-          <AttendeeTable tickets={filteredTickets} event={event} />
-        </section>
+        <>
+          {ticketsError && (
+            <div className="alert alert--danger" role="alert">
+              โหลดรายชื่อไม่สำเร็จ: {ticketsError.message}{' '}
+              <button type="button" className="btn btn--secondary btn--xs" onClick={refetchTickets}>
+                ลองใหม่
+              </button>
+            </div>
+          )}
+
+          {stats.hasAnomalies && (
+            <div className="alert alert--danger" role="alert">
+              <strong>ตรวจพบความผิดปกติของข้อมูลในงานนี้:</strong>{' '}
+              {stats.hasOverCapacity && `จำนวนที่ว่างติดลบ (${stats.remaining}) `}
+              {stats.hasDuplicateSeats &&
+                `พบที่นั่งซ้ำ: ${stats.duplicateSeatIds.map((d) => `${d.seatId} (${d.count})`).join(', ')}`}
+            </div>
+          )}
+
+          <section className="stats-grid" aria-label="สถิติผู้ลงทะเบียนของงานนี้">
+            <StatCard
+              label="ผู้ลงทะเบียนที่ยังมีสิทธิ์"
+              value={stats.activeCount}
+              sublabel={`Valid ${stats.validCount} + Used ${stats.usedCount}`}
+              tone="accent"
+            />
+            <StatCard
+              label="เช็กอินแล้ว (Used)"
+              value={stats.usedCount}
+              sublabel={`อัตราเช็กอิน ${stats.checkInRate}%`}
+              tone="success"
+            />
+            <StatCard
+              label="ยกเลิกแล้ว (Cancelled)"
+              value={stats.cancelledCount}
+              sublabel="ไม่นับรวมในความจุ"
+              tone="muted"
+            />
+            <StatCard
+              label="ที่ว่างคงเหลือ"
+              value={stats.remainingLabel}
+              tone={stats.hasOverCapacity ? 'warning' : 'default'}
+            />
+          </section>
+
+          <section className="filters-panel" aria-label="ค้นหาและกรองผู้ลงทะเบียน">
+            <div className="filters-panel__row filters-panel__row--2">
+              <div className="filter-field filter-field--search">
+                <label htmlFor="attendee-search" className="field-label">
+                  ค้นหาผู้ลงทะเบียน
+                </label>
+                <input
+                  id="attendee-search"
+                  type="search"
+                  className="input"
+                  placeholder="ค้นหาด้วยชื่อ อีเมล รหัสบัตร TKT-... หรือเลขที่นั่ง..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="filter-field">
+                <label htmlFor="attendee-status" className="field-label">
+                  สถานะบัตร
+                </label>
+                <select
+                  id="attendee-status"
+                  className="select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">ทุกสถานะ ({tickets.length})</option>
+                  <option value="valid">Valid - ใช้สิทธิ์ได้ ({stats.validCount})</option>
+                  <option value="used">Used - เช็กอินแล้ว ({stats.usedCount})</option>
+                  <option value="cancelled">Cancelled - ยกเลิกแล้ว ({stats.cancelledCount})</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="filters-panel__footer">
+              <span className="filters-panel__count">
+                แสดง <strong>{filteredTickets.length}</strong> จาก {tickets.length} รายการ
+              </span>
+              {(searchQuery || statusFilter !== 'all') && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                  }}
+                >
+                  ล้างตัวกรอง
+                </button>
+              )}
+            </div>
+          </section>
+
+          {filteredTickets.length === 0 ? (
+            <FeedbackState
+              type="empty"
+              title={
+                tickets.length === 0
+                  ? 'ยังไม่มีผู้ลงทะเบียนสำหรับงานนี้'
+                  : 'ไม่พบรายชื่อที่ตรงกับคำค้นหาหรือตัวกรอง'
+              }
+              message={
+                tickets.length === 0
+                  ? 'เมื่อมีผู้ลงทะเบียนในมุมมอง User รายชื่อและสถานะบัตรจะแสดงที่นี่ทันที'
+                  : 'ลองเปลี่ยนคำค้นหาหรือเลือกดูทุกสถานะ'
+              }
+            />
+          ) : (
+            <section className="card">
+              <AttendeeTable tickets={filteredTickets} event={event} />
+            </section>
+          )}
+        </>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { AccountActions } from '../components/AccountActions';
 import { BrandLogo } from '../components/BrandLogo';
 import { PrimaryNav } from '../components/PrimaryNav';
+import { SiteFooter } from '../components/SiteFooter';
 
 const ORG_NAV_ITEMS = [
   { to: '/org', label: 'Dashboard', end: true },
@@ -29,12 +30,7 @@ export function OrganizerLayout() {
         </div>
       </main>
 
-      <footer className="site-footer">
-        <div className="container site-footer__inner">
-          <span>PULSE Organizer Portal - จัดการงาน ผังที่นั่ง ผู้ลงทะเบียน และ Dashboard</span>
-          <span className="site-footer__copy">© 2026 PULSE by chiqq888. All rights reserved.</span>
-        </div>
-      </footer>
+      <SiteFooter role="Organizer" />
     </div>
   );
 }

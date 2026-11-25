@@ -8,6 +8,7 @@ import { FeaturedEventsSection } from '../components/landing/FeaturedEventsSecti
 import { FeatureBento } from '../components/landing/FeatureBento';
 import { HeroShowcase } from '../components/landing/HeroShowcase';
 import { RoleShowcase } from '../components/landing/RoleShowcase';
+import { SiteFooter } from '../components/SiteFooter';
 import { useAuth } from '../context/AuthContext';
 import { AnimatedNumber, Reveal } from '../hooks/useReveal';
 
@@ -333,20 +334,7 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="site-footer lp-footer">
-        <div className="container lp-footer__inner">
-          <div className="lp-footer__left">
-            <span>PULSE - ระบบลงทะเบียนอีเวนต์และคอนเสิร์ตฟรี พร้อมบัตร QR และการเช็กอิน</span>
-            <span className="site-footer__copy">© 2026 PULSE by chiqq888. All rights reserved.</span>
-          </div>
-
-          <nav className="lp-footer__links" aria-label="ลิงก์ด่วน">
-            <Link to="/user">สำรวจงาน</Link>
-            <Link to="/login">เข้าสู่ระบบ</Link>
-            <Link to="/register">สมัครสมาชิก</Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

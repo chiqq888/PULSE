@@ -5,7 +5,7 @@ import { AccountActions } from './AccountActions';
 import { FeedbackState } from './FeedbackState';
 
 export function RequireAccount({ role: requiredRole }) {
-  const { user, role, loading, error, retryProfile } = useAuth();
+  const { user, role, canAccessStaff, loading, error, retryProfile } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -25,14 +25,22 @@ export function RequireAccount({ role: requiredRole }) {
     );
   }
 
-  if (requiredRole && role !== requiredRole) {
+  const hasAccess = requiredRole === 'staff' ? canAccessStaff : !requiredRole || role === requiredRole;
+  if (!hasAccess) {
     return (
       <section className="auth-boundary card page-stack-sm">
         <h1>บัญชีนี้ไม่มีสิทธิ์เข้าถึง</h1>
         <p className="text-muted">
-          {requiredRole === 'organizer' ? 'หน้านี้สำหรับผู้จัดงาน' : 'หน้านี้สำหรับเจ้าหน้าที่เช็กอิน'}
+          {requiredRole === 'organizer'
+            ? 'หน้านี้สำหรับผู้จัดงาน'
+            : 'ให้ผู้จัดงานเพิ่มอีเมลบัญชีของคุณเป็น Staff แล้วลองโหลดสิทธิ์อีกครั้ง'}
         </p>
         <div className="page-header__actions">
+          {requiredRole === 'staff' && (
+            <button type="button" className="btn btn--secondary" onClick={retryProfile}>
+              โหลดสิทธิ์อีกครั้ง
+            </button>
+          )}
           <Link className="btn btn--primary" to={accountHome(role)}>กลับไปหน้าหลัก</Link>
           <AccountActions />
         </div>

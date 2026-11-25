@@ -4,7 +4,7 @@ export function accountHome(role) {
   return '/user';
 }
 
-export function afterAuthentication(from, role) {
+export function afterAuthentication(from, role, canAccessStaff) {
   const pathname = from?.pathname;
   if (typeof pathname !== 'string') return accountHome(role);
 
@@ -13,6 +13,11 @@ export function afterAuthentication(from, role) {
   }
 
   const home = accountHome(role);
+
+  if (canAccessStaff && (pathname === '/staff' || pathname.startsWith('/staff/'))) {
+    return { pathname, search: from.search, hash: from.hash };
+  }
+
   if (pathname === home || pathname.startsWith(`${home}/`)) {
     return { pathname, search: from.search, hash: from.hash };
   }

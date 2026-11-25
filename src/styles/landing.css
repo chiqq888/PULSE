@@ -196,7 +196,7 @@
 }
 
 .lp-hero__title {
-  font-size: clamp(2.2rem, 4.8vw, 3.75rem);
+  font-size: clamp(1.85rem, 4.8vw, 3.75rem);
   font-weight: 700;
   letter-spacing: -0.036em;
   line-height: 1.12;
@@ -742,22 +742,6 @@
 
 .lp-screen-seat--aisle {
   margin-right: 14px;
-}
-
-@media (max-width: 520px) {
-  .lp-screen-row__seats {
-    gap: 4px;
-  }
-
-  .lp-screen-seat {
-    width: 26px;
-    height: 24px;
-    font-size: 0.62rem;
-  }
-
-  .lp-screen-seat--aisle {
-    margin-right: 8px;
-  }
 }
 
 .lp-mini-seat--available {
@@ -2376,30 +2360,290 @@
   color: var(--success);
 }
 
-/* Footer */
-.lp-footer__inner {
-  display: flex;
+/* Overflow-safe flex/grid wrapping for narrow viewports */
+.lp-seatmap-panel,
+.lp-seat-summary,
+.lp-screen-scanner,
+.lp-screen-verified,
+.lp-role-copy,
+.lp-role-preview {
+  min-width: 0;
+}
+
+.lp-wallet-pass__grid dd,
+.lp-verified-details dd,
+.lp-seat-qr-preview__meta code {
+  overflow-wrap: anywhere;
+}
+
+.lp-screen-scanner__head,
+.lp-verified-meter__row,
+.lp-verified-sync,
+.lp-mini-wallet__top,
+.lp-capacity-meter__labels,
+.lp-role-mockup__head,
+.lp-role-user-card__row,
+.lp-role-ticket-strip,
+.lp-role-progress-box__row,
+.lp-showcase-card__top,
+.lp-showcase-card__footer {
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 20px;
 }
 
-.lp-footer__left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.lp-footer__links {
-  display: flex;
+.lp-verified-details > div {
   flex-wrap: wrap;
-  gap: 16px;
-  font-weight: 500;
+  gap: 2px 10px;
 }
 
-.lp-footer__links a:hover {
-  color: var(--accent);
+.lp-verified-meter__row,
+.lp-capacity-meter__labels,
+.lp-role-progress-box__row {
+  gap: 4px 10px;
+}
+
+.lp-mini-wallet__top,
+.lp-role-mockup__head,
+.lp-role-user-card__row,
+.lp-role-ticket-strip,
+.lp-showcase-card__top,
+.lp-showcase-card__footer {
+  gap: 6px 10px;
+}
+
+.lp-sync-chip > div,
+.lp-role-checkin-result > div,
+.lp-role-ticket-strip > div {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  .lp-section {
+    padding-block: 44px;
+  }
+
+  .lp-section-header {
+    margin-bottom: 26px;
+  }
+
+  .lp-section-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .lp-featured-header {
+    align-items: flex-start;
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 520px) {
+  .lp-screen-frame {
+    border-radius: 18px;
+  }
+
+  .lp-screen-body {
+    padding: 12px;
+  }
+
+  .lp-screen-panel {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .lp-app-bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .lp-app-tab {
+    padding: 5px 9px;
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+
+  .lp-screen-event-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .lp-screen-row {
+    gap: 5px;
+  }
+
+  .lp-screen-row__label {
+    width: 12px;
+    font-size: 0.68rem;
+  }
+
+  .lp-screen-row__seats {
+    gap: 3px;
+  }
+
+  .lp-screen-seat {
+    width: 25px;
+    height: 23px;
+    font-size: 0.62rem;
+  }
+
+  .lp-screen-seat--aisle {
+    margin-right: 6px;
+  }
+
+  .lp-seat-spotlight__val {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .lp-seat-qr-preview {
+    flex-wrap: wrap;
+  }
+
+  .lp-wallet-pass {
+    padding: 14px;
+    gap: 16px;
+    border-radius: 16px;
+  }
+
+  .lp-wallet-pass__banner {
+    padding: 12px 14px;
+  }
+
+  .lp-wallet-pass__banner-copy strong {
+    font-size: 0.96rem;
+  }
+
+  .lp-screen-scanner {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .lp-screen-scanner__viewport {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-header__inner {
+    gap: 8px 10px;
+    padding-block: 9px;
+  }
+
+  .lp-hero {
+    padding-block: 28px 44px;
+  }
+
+  .lp-hero__trust {
+    gap: 6px 14px;
+    font-size: 0.8rem;
+  }
+
+  .lp-metrics-section {
+    padding-block: 32px 12px;
+  }
+
+  .lp-metrics-grid {
+    gap: 10px;
+  }
+
+  .lp-metric-card {
+    padding: 14px;
+  }
+
+  .lp-metric-card__value {
+    font-size: 1.5rem;
+  }
+
+  .lp-metric-card__label {
+    font-size: 0.86rem;
+  }
+
+  .lp-metric-card__sub {
+    font-size: 0.75rem;
+  }
+
+  .lp-bento-card {
+    gap: 14px;
+  }
+
+  .lp-bento-visual {
+    padding: 12px;
+  }
+
+  .lp-role-shell {
+    padding: 16px;
+    gap: 20px;
+    border-radius: 20px;
+  }
+
+  .lp-role-preview {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .lp-role-stats-grid {
+    gap: 7px;
+  }
+
+  .lp-mini-stat {
+    padding: 10px 8px;
+    border-radius: 12px;
+    min-width: 0;
+  }
+
+  .lp-mini-stat span {
+    font-size: 0.68rem;
+  }
+
+  .lp-mini-stat strong {
+    font-size: 1.05rem;
+  }
+
+  .lp-cta {
+    padding-block: 48px;
+  }
+
+  .lp-cta__logo {
+    height: 36px;
+  }
+
+  .lp-cta__subtitle {
+    font-size: 0.92rem;
+  }
+
+  .lp-cta__meta {
+    gap: 8px 14px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .lp-hero__actions {
+    width: 100%;
+    max-width: 320px;
+    flex-direction: column;
+  }
+
+  .lp-hero__actions .btn {
+    width: 100%;
+  }
+
+  .lp-role-copy__actions {
+    width: 100%;
+  }
+
+  .lp-role-cta {
+    width: 100%;
+  }
+
+  .lp-cta__actions {
+    width: 100%;
+    max-width: 320px;
+    flex-direction: column;
+  }
+
+  .lp-cta__actions .btn {
+    width: 100%;
+  }
 }
 
 /* ==========================================================================

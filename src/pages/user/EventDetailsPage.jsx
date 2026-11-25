@@ -582,6 +582,7 @@ export function EventDetailsPage() {
                   seats={event.seats}
                   occupiedSeatIds={stats.occupiedSeatIds}
                   selectedSeatId={selectedSeatId}
+                  templateId={event.seatTemplateId}
                   onSelectSeat={handleSeatSelect}
                   disabled={!userId || registrationDisabled || isSubmitting || hasPendingRetry || availabilityLoading || Boolean(availabilityError)}
                 />
