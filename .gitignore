@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local environment overrides
+.env
+.env.local
+
+# Logs & editors
+*.log
+.DS_Store
+Thumbs.db
