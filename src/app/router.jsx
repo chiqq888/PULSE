@@ -16,8 +16,9 @@ import { EventDetailsPage } from '../pages/user/EventDetailsPage';
 import { ExplorePage } from '../pages/user/ExplorePage';
 import { MyEventsPage } from '../pages/user/MyEventsPage';
 import { TicketDetailsPage } from '../pages/user/TicketDetailsPage';
+import { PageMetadataLayout } from '../seo/PageMetadataLayout';
 
-export const router = createBrowserRouter([
+const routes = [
   {
     path: '/',
     element: <LandingPage />,
@@ -72,4 +73,6 @@ export const router = createBrowserRouter([
     path: '*',
     element: <NotFoundPage />,
   },
-]);
+];
+
+export const router = createBrowserRouter([{ element: <PageMetadataLayout />, children: routes }]);

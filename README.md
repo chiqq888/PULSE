@@ -58,13 +58,17 @@ Organizer เปิดงานของตัวเองจากรายก�
 
 ## Build และเผยแพร่เว็บ
 
+ตั้งค่า Supabase ตามด้านบนแล้วรันคำสั่งนี้บนเครื่องที่เชื่อมต่อ Supabase ได้
+
 ```powershell
 npm run build
-npm run preview
+tar.exe -a -c -f dist.zip -C dist .
 ```
 
-เผยแพร่โฟลเดอร์ `dist` บนโฮสต์ที่รองรับ SPA fallback ไปยัง `index.html` ตั้งค่า Supabase environment variables ก่อน Build และใช้ HTTPS เพื่อให้เบราว์เซอร์เปิดกล้องสแกน QR ได้ ทีม Staff สามารถกรอกรหัสบัตรด้วยตนเองได้เช่นกัน
+อัปโหลด `dist.zip` ใน DirectAdmin แล้วแตกไฟล์ลง `domains/pulse.chiqq888.me/public_html` ให้ `index.html`, `.htaccess` และ `assets/` อยู่ที่รากของ `public_html` ใช้ HTTPS เพื่อให้เบราว์เซอร์เปิดกล้องสแกน QR ได้
 
-บนโฮสต์ Apache ที่รองรับ `mod_rewrite` ให้วาง `.htaccess` จาก `dist` ไว้ใน Document Root ของโดเมนเดียวกับ `index.html` หากมี `.htaccess` อยู่แล้ว ให้เพิ่มกฎ PULSE ลงในไฟล์เดิมก่อนกฎที่จับทุกเส้นทาง แล้วลองเปิดหรือรีเฟรช `/register` โดยตรง
+ตอน build ระบบอ่านข้อมูลงานสาธารณะจาก Supabase ด้วย Publishable key หรือ Anon key เพื่อสร้าง HTML สำหรับพรีวิวลิงก์และ `sitemap.xml` รูปพรีวิวใช้ Poster URL ของงาน สำหรับรูปใหม่ให้ใช้ URL ถาวรที่เปิดได้สาธารณะ เพราะลิงก์ไฟล์แนบจาก Discord มีวันหมดอายุ
+
+เมื่อเผยแพร่งานใหม่หรือแก้ชื่อ คำอธิบาย หรือรูปปก ให้ build และอัปโหลด ZIP ใหม่เพื่ออัปเดตพรีวิวและ sitemap หน้าอีเวนต์ยังอ่านข้อมูลล่าสุดจาก Supabase เมื่อเปิดในเบราว์เซอร์ หลังอัปโหลด สามารถตรวจ `og:image` ใน View Page Source ของลิงก์งานก่อนลองแชร์ใน Discord
 
 [ข้อกำหนดผลิตภัณฑ์](./PULSE_Requirements_TH.md) · [สถาปัตยกรรมและข้อมูล](./PULSE_Technical_Spec_TH.md)

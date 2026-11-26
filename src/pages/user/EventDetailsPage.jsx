@@ -12,6 +12,8 @@ import { useCategories } from '../../hooks/useCategories';
 import { useEvent } from '../../hooks/useEvent';
 import { usePolling } from '../../hooks/usePolling';
 import { useEventStats } from '../../hooks/useTickets';
+import { updatePageMetadata } from '../../seo/head';
+import { getEventMetadata, getEventUrl, NOINDEX_METADATA } from '../../seo/metadata';
 import { ApiError } from '../../services/apiClient';
 import { registerForEvent } from '../../services/ticketService';
 import { getEventAvailabilityStats, isEventFull } from '../../utils/capacityUtils';
@@ -35,6 +37,28 @@ export function EventDetailsPage() {
   const attendeeEmail = user?.email || '';
 
   const { event, loading: eventLoading, error: eventError, refetch: refetchEvent } = useEvent(id);
+  const currentEvent = event?.id === id ? event : null;
+  const eventTitle = currentEvent?.title;
+  const eventDescription = currentEvent?.description;
+  const eventPoster = currentEvent?.posterUrl;
+  const eventNotFound = eventError?.code === 'NOT_FOUND';
+
+  useEffect(() => {
+    if (eventTitle && !eventNotFound) {
+      updatePageMetadata(getEventMetadata({ id, title: eventTitle, description: eventDescription, posterUrl: eventPoster }));
+      return;
+    }
+
+    // Keep the metadata from the initial HTML while the event details load.
+    const canonical = document.head.querySelector('link[rel="canonical"]');
+    if (!eventNotFound && canonical?.href === getEventUrl(id)) return;
+
+    updatePageMetadata({
+      ...NOINDEX_METADATA,
+      title: eventNotFound ? 'ไม่พบอีเวนต์ | PULSE' : 'รายละเอียดอีเวนต์ | PULSE',
+    });
+  }, [id, eventTitle, eventDescription, eventPoster, eventNotFound]);
+
   const { categories } = useCategories();
   const {
     stats: availability,
