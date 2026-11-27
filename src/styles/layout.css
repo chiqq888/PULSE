@@ -196,6 +196,45 @@
   padding-block: 24px 56px;
 }
 
+html:has(.app-shell--embed),
+body:has(.app-shell--embed) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.app-shell--embed {
+  min-height: 100%;
+}
+
+.app-shell--embed .site-main {
+  padding-block: 14px 16px;
+}
+
+.app-shell--embed .page-stack {
+  gap: 14px;
+}
+
+.app-shell--embed .hero-banner {
+  padding: 16px 24px;
+}
+
+.app-shell--embed .hero-banner__content {
+  gap: 6px;
+}
+
+.app-shell--embed .hero-banner__title {
+  font-size: 1.65rem;
+}
+
+.app-shell--embed .filters-panel {
+  padding: 12px 16px;
+}
+
+.app-shell--embed .event-card__body {
+  padding: 12px 16px 14px;
+  gap: 4px;
+}
+
 .site-footer {
   border-top: 1px solid var(--border-color);
   background: var(--bg-page);
@@ -374,6 +413,66 @@
   .site-main {
     padding-block: 32px 64px;
   }
+}
+
+.app-shell--embed-center {
+  min-height: 100vh;
+}
+
+.app-shell--embed-center .site-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 24px;
+}
+
+.app-shell--embed-center .site-main > .container {
+  width: 100%;
+}
+
+.app-shell--embed .event-detail-desc__body--collapsed {
+  max-height: 190px;
+}
+
+.app-shell--embed .event-detail-body {
+  align-items: stretch;
+}
+
+.app-shell--embed .event-detail-main {
+  height: 100%;
+}
+
+.app-shell--embed .event-detail-main > .card {
+  height: 100%;
+}
+
+.app-shell--embed .event-detail-sidebar {
+  position: static;
+  top: auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell--embed .event-detail-reg-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell--embed .event-detail-reg-card > .page-stack-sm,
+.app-shell--embed .event-detail-reg-card > .registration-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell--embed .registration-form {
+  gap: 14px;
+}
+
+.app-shell--embed .event-detail-reg-card .btn--full {
+  margin-top: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

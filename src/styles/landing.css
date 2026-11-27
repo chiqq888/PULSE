@@ -305,9 +305,6 @@
     0 8px 24px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
   overflow: hidden;
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  transform-style: preserve-3d;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   animation: lp-screen-unfold 0.72s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
@@ -387,9 +384,14 @@
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.lp-chrome-toggle:hover {
+.lp-chrome-toggle:hover:not(:disabled) {
   background: var(--bg-subtle);
   border-color: rgba(0, 0, 0, 0.22);
+}
+
+.lp-chrome-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 720px) {
@@ -497,7 +499,11 @@
 }
 
 .lp-app-tab__progress--running {
-  animation: lp-screen-progress 4.8s linear forwards;
+  animation: lp-screen-progress 6.5s linear forwards;
+}
+
+.lp-app-tab__progress--paused {
+  animation-play-state: paused;
 }
 
 .lp-app-status-chip {
@@ -509,6 +515,22 @@
   background: var(--bg-subtle);
   border: 1px solid rgba(0, 0, 0, 0.06);
   white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .lp-app-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+  }
+
+  .lp-app-bar__logo {
+    justify-self: start;
+  }
+
+  .lp-app-tabs {
+    justify-self: center;
+  }
 }
 
 @media (max-width: 767px) {
@@ -541,6 +563,80 @@
     display: flex;
     align-items: stretch;
   }
+}
+
+.lp-screen-body.lp-screen-body--live {
+  padding: 0;
+  min-height: 0;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-page);
+}
+
+.lp-live-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1360 / 840;
+  overflow: hidden;
+  background: var(--bg-page);
+}
+
+.lp-live-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.lp-live-layer--active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.lp-live-iframe {
+  display: block;
+  width: 1360px;
+  height: 840px;
+  border: 0;
+  transform-origin: top left;
+  background: var(--bg-page);
+}
+
+.lp-live-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 20px 28px;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lp-live-skeleton__nav {
+  height: 44px;
+  border-radius: 14px;
+}
+
+.lp-live-skeleton__hero {
+  height: 220px;
+  border-radius: 20px;
+}
+
+.lp-live-skeleton__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 16px;
+}
+
+.lp-live-skeleton__card {
+  border-radius: 20px;
 }
 
 .lp-scene {
@@ -2445,6 +2541,10 @@
     padding: 12px;
   }
 
+  .lp-screen-body.lp-screen-body--live {
+    padding: 0;
+  }
+
   .lp-screen-panel {
     padding: 12px;
     border-radius: 14px;
@@ -2894,6 +2994,7 @@
   }
 
   .lp-screen-frame,
+  .lp-live-layer,
   .lp-role-tabs__glider {
     transition: none;
   }

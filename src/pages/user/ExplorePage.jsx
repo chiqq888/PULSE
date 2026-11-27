@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { EventCard } from '../../components/EventCard';
 import { EventFilters } from '../../components/EventFilters';
 import { FeedbackState } from '../../components/FeedbackState';
@@ -13,6 +14,11 @@ import {
 } from '../../utils/dateUtils';
 
 export function ExplorePage() {
+  const location = useLocation();
+  const isEmbedPreview = useMemo(
+    () => new URLSearchParams(location.search).get('embed') === '1',
+    [location.search]
+  );
   const { events, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
   const { categories, loading: catsLoading, error: catsError, refetch: refetchCats } = useCategories();
   const {
@@ -109,6 +115,12 @@ export function ExplorePage() {
       });
   }, [events, searchQuery, eventType, categoryId, dateFilter, specificDate, categoryMap]);
 
+  const displayedEvents = useMemo(() => {
+    if (!isEmbedPreview) return filteredEvents;
+    const publishedEvents = filteredEvents.filter((ev) => ev.status === 'published');
+    return (publishedEvents.length > 0 ? publishedEvents : filteredEvents).slice(0, 3);
+  }, [filteredEvents, isEmbedPreview]);
+
   const hasActiveFilters =
     Boolean(searchQuery.trim()) ||
     eventType !== 'all' ||
@@ -154,7 +166,7 @@ export function ExplorePage() {
         categories={categories}
         onClear={handleClearFilters}
         hasActiveFilters={hasActiveFilters}
-        resultCount={filteredEvents.length}
+        resultCount={displayedEvents.length}
       />
 
       {loading ? (
@@ -166,7 +178,7 @@ export function ExplorePage() {
           message={error.message}
           onAction={handleRetryAll}
         />
-      ) : filteredEvents.length === 0 ? (
+      ) : displayedEvents.length === 0 ? (
         <FeedbackState
           type="empty"
           title={hasActiveFilters ? 'ไม่พบงานที่ตรงกับเงื่อนไขที่เลือก' : 'ยังไม่มีงานที่เปิดแสดงในขณะนี้'}
@@ -180,7 +192,7 @@ export function ExplorePage() {
         />
       ) : (
         <section className="events-grid" aria-label="รายการอีเวนต์และคอนเสิร์ต">
-          {filteredEvents.map((event) => (
+          {displayedEvents.map((event) => (
             <EventCard
               key={event.id}
               event={event}

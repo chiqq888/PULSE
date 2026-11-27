@@ -67,7 +67,23 @@ export function EventDetailsPage() {
     refetch: refetchAvailability,
   } = useEventStats({ eventId: id });
 
-  const [attendeeName, setAttendeeName] = useState(accountName);
+  const previewParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const isEmbedPreview = previewParams.get('embed') === '1';
+  const focusSeatmap = previewParams.get('focus') === 'seatmap';
+  const isMockSeatedPreview = isEmbedPreview && focusSeatmap;
+  const effectiveUserId = isEmbedPreview ? null : userId;
+  const defaultAttendeeName = isMockSeatedPreview
+    ? 'คุณปภาวิน สุขใจ'
+    : isEmbedPreview
+      ? ''
+      : accountName;
+  const effectiveAttendeeEmail = isMockSeatedPreview
+    ? 'demo@pulse.chiqq888.me'
+    : isEmbedPreview
+      ? ''
+      : attendeeEmail;
+
+  const [attendeeName, setAttendeeName] = useState(defaultAttendeeName);
   const [selectedSeatId, setSelectedSeatId] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -81,17 +97,21 @@ export function EventDetailsPage() {
   const [regCardHeight, setRegCardHeight] = useState(0);
 
   const pendingAttemptRef = useRef(null);
+  const mockSeatInitRef = useRef(null);
   const descRef = useRef(null);
   const regCardRef = useRef(null);
-  const showCreatedTicket = Boolean(createdTicket && createdTicket.user_id === userId);
+  const showCreatedTicket = Boolean(
+    createdTicket && (isMockSeatedPreview || (effectiveUserId && createdTicket.user_id === effectiveUserId))
+  );
   const isSeatedEvent = event?.registrationMode === 'seated';
-  const collapsedMaxHeight =
-    !isSeatedEvent && regCardHeight > 0
+  const collapsedMaxHeight = isEmbedPreview
+    ? 190
+    : !isSeatedEvent && regCardHeight > 0
       ? Math.max(140, regCardHeight - 140)
       : COLLAPSED_DESC_MAX_HEIGHT;
 
   useEffect(() => {
-    setAttendeeName(accountName);
+    setAttendeeName(defaultAttendeeName);
     setSelectedSeatId(null);
     setFieldErrors({});
     setSubmitError('');
@@ -101,7 +121,8 @@ export function EventDetailsPage() {
     setRecoveredFlag(false);
     setHasPendingRetry(false);
     pendingAttemptRef.current = null;
-  }, [id, userId, accountName]);
+    mockSeatInitRef.current = null;
+  }, [id, effectiveUserId, defaultAttendeeName]);
 
   useEffect(() => {
     setIsDescExpanded(false);
@@ -109,7 +130,7 @@ export function EventDetailsPage() {
 
   useEffect(() => {
     const regEl = regCardRef.current;
-    if (!regEl || showCreatedTicket) {
+    if (!regEl || showCreatedTicket || isEmbedPreview) {
       setRegCardHeight(0);
       return undefined;
     }
@@ -138,7 +159,7 @@ export function EventDetailsPage() {
     return () => {
       window.removeEventListener('resize', updateRegHeight);
     };
-  }, [event?.id, userId, authLoading, availabilityLoading, showCreatedTicket]);
+  }, [event?.id, effectiveUserId, authLoading, availabilityLoading, showCreatedTicket, isEmbedPreview]);
 
   useEffect(() => {
     const el = descRef.current;
@@ -183,12 +204,35 @@ export function EventDetailsPage() {
     ]);
   }, [refetchEvent, refetchAvailability]);
 
-  usePolling(pollRefresh, 5000, Boolean(event && event.status !== 'draft'));
+  usePolling(pollRefresh, 5000, Boolean(event && event.status !== 'draft' && !isEmbedPreview));
 
   const stats = useMemo(
     () => getEventAvailabilityStats(event, availability.find((entry) => entry.eventId === id)),
     [event, availability, id]
   );
+
+  useEffect(() => {
+    if (
+      !isMockSeatedPreview ||
+      !isSeatedEvent ||
+      eventLoading ||
+      availabilityLoading ||
+      !Array.isArray(event?.seats) ||
+      event.seats.length === 0 ||
+      mockSeatInitRef.current === event.id
+    ) {
+      return;
+    }
+
+    mockSeatInitRef.current = event.id;
+    const preferredSeat =
+      event.seats.find((s) => s.label === 'A04' && !stats.occupiedSeatIds.has(s.id)) ||
+      event.seats.find((s) => !stats.occupiedSeatIds.has(s.id)) ||
+      null;
+    if (preferredSeat) {
+      setSelectedSeatId(preferredSeat.id);
+    }
+  }, [isMockSeatedPreview, isSeatedEvent, eventLoading, availabilityLoading, event, stats.occupiedSeatIds]);
 
   // If the selected seat gets taken by someone else during polling, clear selection & notify user
   useEffect(() => {
@@ -216,13 +260,21 @@ export function EventDetailsPage() {
     setHasPendingRetry(false);
   };
 
+  const notifyEmbedInteract = useCallback(() => {
+    if (isMockSeatedPreview && typeof window !== 'undefined' && window.parent !== window) {
+      window.parent.postMessage({ type: 'pulse-embed-interact' }, window.location.origin);
+    }
+  }, [isMockSeatedPreview]);
+
   const handleNameChange = (val) => {
+    notifyEmbedInteract();
     setAttendeeName(val);
     setFieldErrors((prev) => ({ ...prev, attendeeName: undefined }));
     setSubmitError('');
   };
 
   const handleSeatSelect = (seatId) => {
+    notifyEmbedInteract();
     setSelectedSeatId(seatId);
     setFieldErrors((prev) => ({ ...prev, seatId: undefined }));
     setSubmitError('');
@@ -232,14 +284,15 @@ export function EventDetailsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!event || !userId || isSubmitting) return;
+    if (!event || (!effectiveUserId && !isMockSeatedPreview) || isSubmitting) return;
+    notifyEmbedInteract();
 
     setSubmitError('');
     setSeatNotice('');
 
     const validation = validateRegistrationForm({
       attendeeName,
-      attendeeEmail,
+      attendeeEmail: effectiveAttendeeEmail,
       event,
       selectedSeatId,
     });
@@ -250,6 +303,22 @@ export function EventDetailsPage() {
     }
 
     setFieldErrors({});
+
+    if (isMockSeatedPreview) {
+      setCreatedTicket({
+        id: generateTicketId(),
+        eventId: event.id,
+        user_id: 'demo-preview',
+        attendeeName: validation.cleaned.attendeeName,
+        attendeeEmail: validation.cleaned.attendeeEmail,
+        seatId: validation.cleaned.seatId,
+        status: 'valid',
+        createdAt: new Date().toISOString(),
+      });
+      setRecoveredFlag(false);
+      return;
+    }
+
     setIsSubmitting(true);
 
     const attemptTicketId = pendingAttemptRef.current || generateTicketId();
@@ -407,7 +476,9 @@ export function EventDetailsPage() {
             className="btn btn--ghost btn--sm event-detail-desc__toggle"
             aria-expanded={isDescExpanded}
             aria-controls="event-desc-content"
-            onClick={() => setIsDescExpanded((prev) => !prev)}
+            onClick={() => {
+              if (!isEmbedPreview) setIsDescExpanded((prev) => !prev);
+            }}
           >
             <span>{isDescExpanded ? 'ย่อลง' : 'อ่านเพิ่มเติม'}</span>
             <Icon
@@ -427,20 +498,22 @@ export function EventDetailsPage() {
 
   return (
     <div className="page-stack">
-      <div className="breadcrumb-row">
-        <Link to="/user" className="link-back">
-          <Icon name="chevronLeft" size={15} />
-          <span>กลับไปหน้า Explore</span>
-        </Link>
-        <button
-          type="button"
-          className="btn btn--ghost btn--xs"
-          onClick={pollRefresh}
-        >
-          <Icon name="refresh" size={14} />
-          <span>รีเฟรชสถานะล่าสุด</span>
-        </button>
-      </div>
+      {!isEmbedPreview && (
+        <div className="breadcrumb-row">
+          <Link to="/user" className="link-back">
+            <Icon name="chevronLeft" size={15} />
+            <span>กลับไปหน้า Explore</span>
+          </Link>
+          <button
+            type="button"
+            className="btn btn--ghost btn--xs"
+            onClick={pollRefresh}
+          >
+            <Icon name="refresh" size={14} />
+            <span>รีเฟรชสถานะล่าสุด</span>
+          </button>
+        </div>
+      )}
 
       {availabilityError && (
         <div className="alert alert--danger" role="alert">
@@ -451,7 +524,8 @@ export function EventDetailsPage() {
         </div>
       )}
 
-      <article className="event-detail-hero card">
+      {!isMockSeatedPreview && (
+        <article className="event-detail-hero card">
         <div className="event-detail-hero__poster">
           <PosterImage src={event.posterUrl} alt={event.title} className="event-detail-hero__img" />
         </div>
@@ -512,7 +586,8 @@ export function EventDetailsPage() {
             </div>
           </dl>
         </div>
-      </article>
+        </article>
+      )}
 
       {showCreatedTicket ? (
         <>
@@ -565,28 +640,40 @@ export function EventDetailsPage() {
                 </dl>
 
                 <div className="registration-success__actions">
-                  <Link
-                    to={`/user/tickets/${createdTicket.id}`}
-                    className="btn btn--primary"
-                  >
-                    เปิดหน้ารายละเอียดบัตร QR
-                  </Link>
-                  <Link to="/user/my-events" className="btn btn--secondary">
-                    ดูทั้งหมดใน My Events
-                  </Link>
+                  {isMockSeatedPreview ? (
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={() => setCreatedTicket(null)}
+                    >
+                      ลองเลือกที่นั่งใหม่
+                    </button>
+                  ) : (
+                    <>
+                      <Link
+                        to={`/user/tickets/${createdTicket.id}`}
+                        className="btn btn--primary"
+                      >
+                        เปิดหน้ารายละเอียดบัตร QR
+                      </Link>
+                      <Link to="/user/my-events" className="btn btn--secondary">
+                        ดูทั้งหมดใน My Events
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </section>
-          {descriptionSection}
+          {!isMockSeatedPreview && descriptionSection}
         </>
       ) : (
         <div className="event-detail-body">
           <div className="event-detail-main">
-            {descriptionSection}
+            {!isMockSeatedPreview && descriptionSection}
 
             {event.registrationMode === 'seated' && (
-              <section className="card">
+              <section id="event-seatmap" className="card">
                 <div className="section-heading">
                   <h2 className="section-title">เลือกที่นั่งบนผังคอนเสิร์ต (1 ที่นั่งต่อการลงทะเบียน)</h2>
                   <span className="text-muted text-sm">
@@ -608,7 +695,11 @@ export function EventDetailsPage() {
                   selectedSeatId={selectedSeatId}
                   templateId={event.seatTemplateId}
                   onSelectSeat={handleSeatSelect}
-                  disabled={!userId || registrationDisabled || isSubmitting || hasPendingRetry || availabilityLoading || Boolean(availabilityError)}
+                  disabled={
+                    isMockSeatedPreview
+                      ? (isSubmitting || availabilityLoading || Boolean(availabilityError))
+                      : (!effectiveUserId || registrationDisabled || isSubmitting || hasPendingRetry || availabilityLoading || Boolean(availabilityError))
+                  }
                 />
               </section>
             )}
@@ -643,21 +734,21 @@ export function EventDetailsPage() {
                 </div>
               )}
 
-              {authLoading ? (
+              {authLoading && !isEmbedPreview ? (
                 <FeedbackState type="loading" compact title="กำลังตรวจสอบบัญชี..." />
-              ) : userId ? (
+              ) : effectiveUserId || isMockSeatedPreview ? (
                 <RegistrationForm
                   event={event}
                   attendeeName={attendeeName}
-                  attendeeEmail={attendeeEmail}
+                  attendeeEmail={effectiveAttendeeEmail}
                   onNameChange={handleNameChange}
                   selectedSeat={selectedSeatObj}
                   fieldErrors={fieldErrors}
                   submitError={submitError}
                   hasPendingRetry={hasPendingRetry}
                   isSubmitting={isSubmitting}
-                  disabled={registrationDisabled}
-                  disabledReason={disabledReason}
+                  disabled={isMockSeatedPreview ? false : registrationDisabled}
+                  disabledReason={isMockSeatedPreview ? '' : disabledReason}
                   onSubmit={handleSubmit}
                 />
               ) : (
